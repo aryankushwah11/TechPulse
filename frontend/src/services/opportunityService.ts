@@ -1,5 +1,6 @@
 import type { Opportunity } from '../types/opportunity'
-import { sampleOpportunities } from '../data/sampleOpportunities'
+
+const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export async function fetchOpportunities(): Promise<Opportunity[]> {
   const params = new URLSearchParams(window.location.search)
@@ -9,10 +10,23 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
   }
 
   if (import.meta.env.DEV && params.get('simulate') === 'error') {
-    throw new Error(
-      'Unable to load opportunities. Please try again.',
-    )
+    throw new Error('Unable to load opportunities. Please try again.')
   }
 
-  return sampleOpportunities
+  try {
+    const response = await fetch(`${API_BASE_URL}/opportunities`)
+
+    if (!response.ok) {
+      throw new Error('Unable to load opportunities from the server.')
+    }
+
+    const data: { count: number; results: Opportunity[] } =
+      await response.json()
+
+    return data.results
+  } catch {
+    throw new Error(
+      'Could not connect to TechPulse API. Make sure the backend server is running.',
+    )
+  }
 }
