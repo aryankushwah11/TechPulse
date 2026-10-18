@@ -1,11 +1,26 @@
+
+import json
+from contextlib import asynccontextmanager
+from datetime import date
+from typing import Literal
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Literal
+
+from backend.database import get_connection, init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="TechPulse API",
     description="API for discovering student opportunities",
-    version="0.2.0",
+    version="0.3.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -18,48 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-opportunities = [
-    {
-        "id": 1,
-        "title": "AI Innovation Hackathon",
-        "organization": "TechPulse Demo",
-        "category": "Hackathon",
-        "description": "Build an innovative AI-based project.",
-        "mode": "Online",
-        "location": "Online",
-        "deadline": "2026-11-15",
-        "sourceUrl": None,
-        "tags": ["AI", "Python", "Machine Learning"],
-        "isSample": True,
-    },
-    {
-        "id": 2,
-        "title": "Frontend Developer Internship",
-        "organization": "TechPulse Demo",
-        "category": "Internship",
-        "description": "Learn frontend development by building web applications.",
-        "mode": "Hybrid",
-        "location": "India",
-        "deadline": "2026-11-20",
-        "sourceUrl": None,
-        "tags": ["React", "JavaScript", "CSS"],
-        "isSample": True,
-    },
-    {
-        "id": 3,
-        "title": "Python Developer - Fresher",
-        "organization": "TechPulse Demo",
-        "category": "Job",
-        "description": "An entry-level opportunity for Python developers.",
-        "mode": "Offline",
-        "location": "Ghaziabad",
-        "deadline": "2026-11-25",
-        "sourceUrl": None,
-        "tags": ["Python", "FastAPI", "SQL"],
-        "isSample": True,
-    },
-]
 
 
 @app.get("/")
@@ -82,23 +55,42 @@ def get_opportunities(
         "Hackathon", "Internship", "Job", "Event", "Workshop"
     ] | None = None,
 ):
-    results = opportunities
+    with get_connection() as connection:
+        query = "SELECT * FROM opportunities"
+        conditions = []
+        values = []
 
-    if search.strip():
-        keyword = search.strip().lower()
-        results = [
-            item for item in results
-            if keyword in item["title"].lower()
-            or keyword in item["organization"].lower()
-            or keyword in item["description"].lower()
-            or any(keyword in tag.lower() for tag in item["tags"])
-        ]
+        if search.strip():
+            keyword = f"%{search.strip()}%"
+            conditions.append("""
+                (
+                    title LIKE ?
+                    OR organization LIKE ?
+                    OR description LIKE ?
+                    OR tags LIKE ?
+                    OR location LIKE ?
+                )
+            """)
+            values.extend([keyword] * 5)
 
-    if category:
-        results = [
-            item for item in results
-            if item["category"] == category
-        ]
+        if category:
+            conditions.append("category = ?")
+            values.append(category)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        query += " ORDER BY id"
+
+        rows = connection.execute(query, values).fetchall()
+
+        results = []
+        for row in rows:
+            item = dict(row)
+            item["tags"] = json.loads(item["tags"])
+            item["isSample"] = bool(item["isSample"])
+            item["lastVerified"] = date.today().isoformat()
+            results.append(item)
 
     return {
         "count": len(results),
