@@ -4,10 +4,27 @@ from contextlib import asynccontextmanager
 from datetime import date
 from typing import Literal
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, HttpUrl
 
 from backend.database import get_connection, init_db
+
+
+Category = Literal["Hackathon", "Internship", "Job", "Event", "Workshop"]
+Mode = Literal["Online", "Offline", "Hybrid"]
+
+
+class OpportunityCreate(BaseModel):
+    title: str = Field(min_length=3, max_length=150)
+    organization: str = Field(min_length=2, max_length=100)
+    category: Category
+    description: str = Field(min_length=10, max_length=2000)
+    mode: Mode
+    location: str = Field(min_length=2, max_length=150)
+    deadline: date | None = None
+    sourceUrl: HttpUrl | None = None
+    tags: list[str] = Field(min_length=1, max_length=15)
 
 
 @asynccontextmanager
@@ -19,7 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="TechPulse API",
     description="API for discovering student opportunities",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -51,9 +68,7 @@ def health_check():
 @app.get("/opportunities")
 def get_opportunities(
     search: str = Query(default="", description="Search opportunities"),
-    category: Literal[
-        "Hackathon", "Internship", "Job", "Event", "Workshop"
-    ] | None = None,
+    category: Category | None = None,
 ):
     with get_connection() as connection:
         query = "SELECT * FROM opportunities"
@@ -81,7 +96,6 @@ def get_opportunities(
             query += " WHERE " + " AND ".join(conditions)
 
         query += " ORDER BY id"
-
         rows = connection.execute(query, values).fetchall()
 
         results = []
@@ -92,7 +106,53 @@ def get_opportunities(
             item["lastVerified"] = date.today().isoformat()
             results.append(item)
 
-    return {
-        "count": len(results),
-        "results": results,
-    }
+    return {"count": len(results), "results": results}
+
+
+@app.post("/opportunities", status_code=201)
+def create_opportunity(opportunity: OpportunityCreate):
+    data = opportunity.model_dump()
+    source_url = data["sourceUrl"]
+
+    if source_url is not None:
+        data["sourceUrl"] = str(source_url)
+
+    if data["deadline"] is not None:
+        data["deadline"] = data["deadline"].isoformat()
+
+    data["tags"] = json.dumps(data["tags"])
+
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO opportunities (
+                title, organization, category, description,
+                mode, location, deadline, sourceUrl, tags, isSample
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            """,
+            (
+                data["title"],
+                data["organization"],
+                data["category"],
+                data["description"],
+                data["mode"],
+                data["location"],
+                data["deadline"],
+                data["sourceUrl"],
+                data["tags"],
+            ),
+        )
+        opportunity_id = cursor.lastrowid
+
+        row = connection.execute(
+            "SELECT * FROM opportunities WHERE id = ?",
+            (opportunity_id,),
+        ).fetchone()
+
+        result = dict(row)
+        result["tags"] = json.loads(result["tags"])
+        result["isSample"] = bool(result["isSample"])
+        result["lastVerified"] = date.today().isoformat()
+
+    return result
