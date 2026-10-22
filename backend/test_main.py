@@ -41,3 +41,18 @@ def test_search_with_no_results():
     response = client.get("/opportunities?search=nonexistentxyz")
     assert response.status_code == 200
     assert response.json()["count"] == 0
+def test_duplicate_opportunity_returns_conflict():
+    payload = {
+        "title": "AI Innovation Hackathon",
+        "organization": "TechPulse Demo",
+        "category": "Hackathon",
+        "description": "Build an innovative AI-based project.",
+        "mode": "Online",
+        "location": "Online",
+        "deadline": "2026-11-15",
+        "sourceUrl": None,
+        "tags": ["AI", "Python"],
+    }
+    response = client.post("/opportunities", json=payload)
+    assert response.status_code == 409
+    assert "already exists" in response.json()["detail"]

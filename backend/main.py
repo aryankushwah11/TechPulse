@@ -1,4 +1,3 @@
-
 import json
 from contextlib import asynccontextmanager
 from datetime import date
@@ -36,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="TechPulse API",
     description="API for discovering student opportunities",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -112,17 +111,36 @@ def get_opportunities(
 @app.post("/opportunities", status_code=201)
 def create_opportunity(opportunity: OpportunityCreate):
     data = opportunity.model_dump()
-    source_url = data["sourceUrl"]
 
-    if source_url is not None:
-        data["sourceUrl"] = str(source_url)
-
-    if data["deadline"] is not None:
-        data["deadline"] = data["deadline"].isoformat()
-
-    data["tags"] = json.dumps(data["tags"])
+    data["title"] = data["title"].strip()
+    data["organization"] = data["organization"].strip()
 
     with get_connection() as connection:
+        existing = connection.execute(
+            """
+            SELECT id
+            FROM opportunities
+            WHERE LOWER(TRIM(title)) = LOWER(?)
+            AND LOWER(TRIM(organization)) = LOWER(?)
+            """,
+            (data["title"], data["organization"]),
+        ).fetchone()
+
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail="An opportunity with this title and organization already exists.",
+            )
+
+        source_url = data["sourceUrl"]
+        if source_url is not None:
+            data["sourceUrl"] = str(source_url)
+
+        if data["deadline"] is not None:
+            data["deadline"] = data["deadline"].isoformat()
+
+        data["tags"] = json.dumps(data["tags"])
+
         cursor = connection.execute(
             """
             INSERT INTO opportunities (
@@ -143,6 +161,7 @@ def create_opportunity(opportunity: OpportunityCreate):
                 data["tags"],
             ),
         )
+
         opportunity_id = cursor.lastrowid
 
         row = connection.execute(
