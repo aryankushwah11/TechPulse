@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="TechPulse API",
     description="API for discovering student opportunities",
-    version="0.5.0",
+    version="0.6.0",
     lifespan=lifespan,
 )
 
@@ -91,10 +91,12 @@ def get_opportunities(
             conditions.append("category = ?")
             values.append(category)
 
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+        conditions.append("(deadline IS NULL OR deadline >= ?)")
+        values.append(date.today().isoformat())
 
+        query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY id"
+
         rows = connection.execute(query, values).fetchall()
 
         results = []

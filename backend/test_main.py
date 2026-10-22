@@ -1,4 +1,3 @@
-
 from fastapi.testclient import TestClient
 from backend.main import app
 
@@ -41,6 +40,8 @@ def test_search_with_no_results():
     response = client.get("/opportunities?search=nonexistentxyz")
     assert response.status_code == 200
     assert response.json()["count"] == 0
+
+
 def test_duplicate_opportunity_returns_conflict():
     payload = {
         "title": "AI Innovation Hackathon",
@@ -53,6 +54,34 @@ def test_duplicate_opportunity_returns_conflict():
         "sourceUrl": None,
         "tags": ["AI", "Python"],
     }
+
     response = client.post("/opportunities", json=payload)
+
     assert response.status_code == 409
     assert "already exists" in response.json()["detail"]
+
+
+def test_expired_opportunity_is_not_returned():
+    from datetime import date, timedelta
+
+    expired_date = (date.today() - timedelta(days=1)).isoformat()
+
+    payload = {
+        "title": "Expired Testing Opportunity",
+        "organization": "Expiry Test Company",
+        "category": "Internship",
+        "description": "This opportunity is used to test expired deadlines.",
+        "mode": "Online",
+        "location": "India",
+        "deadline": expired_date,
+        "sourceUrl": None,
+        "tags": ["Testing", "Python"],
+    }
+
+    create_response = client.post("/opportunities", json=payload)
+    assert create_response.status_code == 201
+
+    response = client.get("/opportunities?search=Expired Testing Opportunity")
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 0
