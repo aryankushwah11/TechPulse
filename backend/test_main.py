@@ -67,7 +67,7 @@ def test_expired_opportunity_is_not_returned():
     expired_date = (date.today() - timedelta(days=1)).isoformat()
 
     payload = {
-        "title": "Expired Testing Opportunity",
+        "title": "Expired Testing Opportunity 20261023",
         "organization": "Expiry Test Company",
         "category": "Internship",
         "description": "This opportunity is used to test expired deadlines.",
@@ -81,7 +81,9 @@ def test_expired_opportunity_is_not_returned():
     create_response = client.post("/opportunities", json=payload)
     assert create_response.status_code == 201
 
-    response = client.get("/opportunities?search=Expired Testing Opportunity")
+    response = client.get(
+        "/opportunities?search=Expired Testing Opportunity 20261023"
+    )
 
     assert response.status_code == 200
     assert response.json()["count"] == 0
