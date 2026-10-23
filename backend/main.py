@@ -1,3 +1,4 @@
+
 import json
 from contextlib import asynccontextmanager
 from datetime import date
@@ -5,7 +6,7 @@ from typing import Literal
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from backend.database import get_connection, init_db
 
@@ -24,6 +25,22 @@ class OpportunityCreate(BaseModel):
     deadline: date | None = None
     sourceUrl: HttpUrl | None = None
     tags: list[str] = Field(min_length=1, max_length=15)
+
+    @field_validator("title", "organization", "description", "location")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("This field cannot be empty.")
+        return value
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, tags: list[str]) -> list[str]:
+        cleaned_tags = [tag.strip() for tag in tags]
+        if any(not tag for tag in cleaned_tags):
+            raise ValueError("Tags cannot be empty.")
+        return cleaned_tags
 
 
 @asynccontextmanager

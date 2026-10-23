@@ -1,3 +1,7 @@
+
+from datetime import date, timedelta
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 from backend.main import app
 
@@ -62,13 +66,15 @@ def test_duplicate_opportunity_returns_conflict():
 
 
 def test_expired_opportunity_is_not_returned():
-    from datetime import date, timedelta
-
     expired_date = (date.today() - timedelta(days=1)).isoformat()
+    unique_id = uuid4().hex
+
+    title = f"Expired Testing Opportunity {unique_id}"
+    organization = f"Expiry Test Company {unique_id}"
 
     payload = {
-        "title": "Expired Testing Opportunity 20261023",
-        "organization": "Expiry Test Company",
+        "title": title,
+        "organization": organization,
         "category": "Internship",
         "description": "This opportunity is used to test expired deadlines.",
         "mode": "Online",
@@ -82,7 +88,8 @@ def test_expired_opportunity_is_not_returned():
     assert create_response.status_code == 201
 
     response = client.get(
-        "/opportunities?search=Expired Testing Opportunity 20261023"
+        "/opportunities",
+        params={"search": title},
     )
 
     assert response.status_code == 200
