@@ -1,68 +1,44 @@
-import type { Opportunity } from '../types/opportunity'
-import { getDaysUntil } from '../utils/dates'
+const highlights = ['Hackathons', 'Internships', 'Fresher jobs', 'Workshops', 'Events']
 
-interface HeroProps {
-  opportunities: Opportunity[]
-  isLoading: boolean
-}
-
-export function Hero({ opportunities, isLoading }: HeroProps) {
-  const closingThisWeek = opportunities.filter((opportunity) => {
-    const days = getDaysUntil(opportunity.deadline)
-    return days !== null && days >= 0 && days <= 7
-  }).length
-
-  const remoteFriendly = opportunities.filter(
-    (opportunity) => opportunity.mode !== 'Offline',
-  ).length
-
-  const organizations = new Set(
-    opportunities.map((opportunity) => opportunity.organization),
-  ).size
-
-  const stats = [
-    { label: 'Open opportunities', value: opportunities.length },
-    { label: 'Closing this week', value: closingThisWeek },
-    { label: 'Online or hybrid', value: remoteFriendly },
-    { label: 'Organizations', value: organizations },
-  ]
-
+export function Hero() {
   return (
-    <section className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-12">
-        <div className="max-w-2xl">
-          <p className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent-soft-foreground">
-            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Curated for students and early-career builders
-          </p>
-          <h1 className="mt-4 text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Discover opportunities that move your career forward
-          </h1>
-          <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground">
-            Hackathons, internships, fresher jobs, workshops and tech events,
-            all in one place. Spend less time searching and more time building.
-          </p>
-        </div>
+    <section className="relative overflow-hidden border-b border-border">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 600 120"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-1/2 text-border-strong md:block"
+      >
+        <path
+          d="M0 70 H220 L240 70 L256 40 L276 100 L296 20 L314 80 L326 70 H600"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          vectorEffect="non-scaling-stroke"
+          strokeLinejoin="round"
+        />
+        <circle cx="296" cy="20" r="3" className="fill-accent" />
+      </svg>
 
-        <dl className="grid w-full shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4 lg:w-auto lg:min-w-[32rem]">
-          {stats.map((stat) => (
-            <div key={stat.label} className="bg-surface px-4 py-4">
-              <dt className="text-xs font-medium text-muted-foreground">
-                {stat.label}
-              </dt>
-              <dd className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-foreground">
-                {isLoading ? (
-                  <span
-                    aria-hidden="true"
-                    className="inline-block h-7 w-10 animate-pulse rounded bg-surface-muted align-middle"
-                  />
-                ) : (
-                  stat.value
-                )}
-              </dd>
-            </div>
+      <div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-subtle-foreground">
+          For students and early-career builders
+        </p>
+        <h1 className="mt-3 max-w-xl text-pretty text-2xl font-semibold tracking-tight text-foreground sm:text-[28px] sm:leading-tight">
+          Find your next hackathon, internship or first role.
+        </h1>
+        <p className="mt-2 max-w-lg text-pretty text-[15px] leading-relaxed text-muted-foreground">
+          One place to track opportunities in tech. Save what matters, and
+          always apply through the official source.
+        </p>
+        <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+          {highlights.map((item) => (
+            <li key={item} className="flex items-center gap-2">
+              <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent" />
+              {item}
+            </li>
           ))}
-        </dl>
+        </ul>
       </div>
     </section>
   )

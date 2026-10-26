@@ -3,55 +3,58 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f5f6f8;
+  --background: #faf8f5;
   --surface: #ffffff;
-  --surface-muted: #f1f3f5;
-  --border: #e2e5ea;
-  --border-strong: #cfd4db;
-  --foreground: #111827;
-  --muted-foreground: #5b6473;
-  --subtle-foreground: #808897;
-  --accent: #15803d;
-  --accent-hover: #166534;
+  --surface-muted: #f4f1ec;
+  --border: #e8e4dd;
+  --border-strong: #d7d1c7;
+  --foreground: #1b1a17;
+  --muted-foreground: #5d5952;
+  --subtle-foreground: #847f76;
+  --accent: #0f7a55;
+  --accent-hover: #0b6646;
   --accent-foreground: #ffffff;
-  --accent-soft: #e9f6ee;
-  --accent-soft-foreground: #166534;
+  --accent-soft: #e9f3ee;
+  --accent-soft-foreground: #0b5e42;
   --danger: #b42318;
-  --danger-soft: #fdecea;
-  --warning: #9a5b00;
-  --warning-soft: #fff5e0;
-  --ring: rgb(21 128 61 / 0.35);
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
-  --shadow-card-hover: 0 4px 16px rgb(16 24 40 / 0.08);
+  --danger-soft: #fdf0ee;
+  --warning: #8a5300;
+  --warning-soft: #fbf3e4;
+  --ring: rgb(15 122 85 / 0.28);
+  --shadow-card: 0 1px 2px rgb(28 25 20 / 0.04);
+  --shadow-card-hover: 0 6px 20px -6px rgb(28 25 20 / 0.12);
+  --shadow-overlay: 0 24px 64px -12px rgb(28 25 20 / 0.28);
   color-scheme: light;
 }
 
 .dark {
-  --background: #0b1016;
-  --surface: #121922;
-  --surface-muted: #18212c;
-  --border: #232d3a;
-  --border-strong: #334155;
-  --foreground: #e7ecf2;
-  --muted-foreground: #9aa5b5;
-  --subtle-foreground: #6f7b8c;
-  --accent: #3ccf7e;
-  --accent-hover: #5ad893;
-  --accent-foreground: #04170b;
-  --accent-soft: rgb(60 207 126 / 0.12);
-  --accent-soft-foreground: #6fe0a1;
-  --danger: #f87171;
-  --danger-soft: rgb(248 113 113 / 0.1);
-  --warning: #fbbf24;
-  --warning-soft: rgb(251 191 36 / 0.1);
-  --ring: rgb(60 207 126 / 0.4);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.35);
+  --background: #111214;
+  --surface: #18191c;
+  --surface-muted: #202125;
+  --border: #2a2b30;
+  --border-strong: #3a3b41;
+  --foreground: #ecebe8;
+  --muted-foreground: #a6a49e;
+  --subtle-foreground: #7f7d78;
+  --accent: #36b585;
+  --accent-hover: #4cc496;
+  --accent-foreground: #06140e;
+  --accent-soft: rgb(54 181 133 / 0.12);
+  --accent-soft-foreground: #74d3ac;
+  --danger: #f08a80;
+  --danger-soft: rgb(240 138 128 / 0.1);
+  --warning: #e5b45a;
+  --warning-soft: rgb(229 180 90 / 0.1);
+  --ring: rgb(54 181 133 / 0.35);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.25);
+  --shadow-card-hover: 0 8px 24px -8px rgb(0 0 0 / 0.5);
+  --shadow-overlay: 0 24px 64px -12px rgb(0 0 0 / 0.6);
   color-scheme: dark;
 }
 
 @theme inline {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
@@ -72,6 +75,7 @@
   --color-ring: var(--ring);
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-overlay: var(--shadow-overlay);
 }
 
 html {
@@ -88,6 +92,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11';
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -95,7 +100,8 @@ body {
 }
 
 button:not(:disabled),
-[role='button']:not(:disabled) {
+[role='button']:not(:disabled),
+[role='switch']:not(:disabled) {
   cursor: pointer;
 }
 
@@ -105,21 +111,45 @@ button:not(:disabled),
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: var(--accent-soft);
+  color: var(--foreground);
 }
 
 input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
+  opacity: 0.6;
 }
 
 .dark input[type='date']::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
+  filter: invert(0.85);
 }
 
 dialog::backdrop {
-  background: rgb(8 12 18 / 0.55);
-  backdrop-filter: blur(2px);
+  background: rgb(17 18 20 / 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 180ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

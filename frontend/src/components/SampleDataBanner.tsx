@@ -4,14 +4,14 @@ export function SampleDataBanner() {
   return (
     <div
       role="note"
-      className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-foreground"
+      className="flex items-start gap-2.5 rounded-lg border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground"
     >
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-      <p className="leading-relaxed">
-        <strong className="font-semibold">Demo data:</strong>{' '}
+      <p>
+        <span className="font-medium">Some listings are samples.</span>{' '}
         <span className="text-muted-foreground">
-          Listings marked as sample are fictional examples, not verified live
-          openings. Always check official sources before applying.
+          Items marked Sample are fictional examples. Always confirm details at
+          the official source before applying.
         </span>
       </p>
     </div>

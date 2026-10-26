@@ -13,16 +13,18 @@ interface CategoryFilterProps {
   selectedCategory: OpportunityCategory | 'All'
   onCategoryChange: (category: OpportunityCategory | 'All') => void
   counts: Record<OpportunityCategory | 'All', number>
+  showCounts: boolean
 }
 
 export function CategoryFilter({
   selectedCategory,
   onCategoryChange,
   counts,
+  showCounts,
 }: CategoryFilterProps) {
   return (
     <div
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
+      className="scrollbar-none flex gap-1 overflow-x-auto"
       role="group"
       aria-label="Filter by opportunity category"
     >
@@ -35,22 +37,22 @@ export function CategoryFilter({
             type="button"
             onClick={() => onCategoryChange(value)}
             aria-pressed={isSelected}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
               isSelected
-                ? 'border-accent bg-accent-soft text-accent-soft-foreground'
-                : 'border-border bg-surface text-muted-foreground hover:border-border-strong hover:text-foreground'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-surface-muted hover:text-foreground'
             }`}
           >
             {label}
-            <span
-              className={`rounded-full px-1.5 text-xs tabular-nums ${
-                isSelected
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-surface-muted text-subtle-foreground'
-              }`}
-            >
-              {counts[value]}
-            </span>
+            {showCounts && (
+              <span
+                className={`font-mono text-[11px] tabular-nums ${
+                  isSelected ? 'text-background/70' : 'text-subtle-foreground'
+                }`}
+              >
+                {counts[value]}
+              </span>
+            )}
           </button>
         )
       })}

@@ -41,7 +41,7 @@ export function SubmitOpportunityDialog({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-2xl border border-border bg-surface p-0 text-foreground shadow-2xl backdrop:bg-transparent"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-xl border border-border bg-surface p-0 text-foreground shadow-overlay backdrop:bg-transparent"
     >
       {open && (
         <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
@@ -49,25 +49,25 @@ export function SubmitOpportunityDialog({
             <div>
               <h2
                 id="submit-opportunity-heading"
-                className="text-lg font-semibold text-foreground"
+                className="text-base font-semibold text-foreground"
               >
                 Submit an opportunity
               </h2>
               <p
                 id="submit-opportunity-description"
-                className="mt-1 text-sm text-muted-foreground"
+                className="mt-0.5 text-sm text-muted-foreground"
               >
-                Share something useful with fellow students. Only submit details
-                you can verify from a reliable source.
+                Share a listing with other students. Only include details you
+                can verify at the official source.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
+              className="-mt-1 -mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-subtle-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
             >
-              <XIcon className="h-5 w-5" />
+              <XIcon className="h-4 w-4" />
             </button>
           </div>
 

@@ -116,6 +116,21 @@ export const InfoIcon = (props: IconProps) => (
   </BaseIcon>
 )
 
+export const CompassIcon = (props: IconProps) => (
+  <BaseIcon {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" />
+  </BaseIcon>
+)
+
+export const ServerIcon = (props: IconProps) => (
+  <BaseIcon {...props}>
+    <rect x="3.5" y="4" width="17" height="7" rx="1.5" />
+    <rect x="3.5" y="13" width="17" height="7" rx="1.5" />
+    <path d="M7.5 7.5h.01M7.5 16.5h.01" />
+  </BaseIcon>
+)
+
 export const RefreshIcon = (props: IconProps) => (
   <BaseIcon {...props}>
     <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" />
