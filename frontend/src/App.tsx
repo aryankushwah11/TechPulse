@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CategoryFilter } from './components/CategoryFilter'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
-import { CheckCircleIcon, XIcon } from './components/Icons'
 import { OpportunityCard } from './components/OpportunityCard'
 import { SampleDataBanner } from './components/SampleDataBanner'
 import { SearchBar } from './components/SearchBar'
 import { SortSelect } from './components/SortSelect'
-import { SubmitOpportunityDialog } from './components/SubmitOpportunityDialog'
+import { SubmitOpportunityForm } from './components/SubmitOpportunityForm'
 import {
   EmptyState,
   ErrorState,
@@ -17,14 +16,12 @@ import {
 import { useDebouncedValue } from './hooks/useDebouncedValue'
 import { useOpportunities } from './hooks/useOpportunities'
 import { useSavedOpportunities } from './hooks/useSavedOpportunities'
-import { useTheme } from './hooks/useTheme'
 import {
   filterOpportunities,
   getCategoryCounts,
   sortOpportunities,
 } from './utils/opportunityFilters'
 import type {
-  Opportunity,
   OpportunityCategory,
   SortOption,
   ViewMode,
@@ -33,50 +30,45 @@ import type {
 export default function App() {
   const { opportunities, isLoading, error, reload } = useOpportunities()
   const { savedIds, toggleSaved, isSaved } = useSavedOpportunities()
-  const { theme, toggleTheme } = useTheme()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] =
     useState<OpportunityCategory | 'All'>('All')
   const [sortBy, setSortBy] = useState<SortOption>('deadline')
   const [currentView, setCurrentView] = useState<ViewMode>('all')
-  const [isSubmitOpen, setIsSubmitOpen] = useState(false)
+  const [showSubmitForm, setShowSubmitForm] = useState(false)
   const [submissionNotice, setSubmissionNotice] = useState('')
 
   const debouncedSearch = useDebouncedValue(searchQuery)
 
-  useEffect(() => {
-    if (!submissionNotice) return
-    const timeout = window.setTimeout(() => setSubmissionNotice(''), 6000)
-    return () => window.clearTimeout(timeout)
-  }, [submissionNotice])
+  const categoryCounts = useMemo(
+    () => getCategoryCounts(opportunities),
+    [opportunities],
+  )
 
-  const baseOpportunities = useMemo(
-    () =>
+  const visibleOpportunities = useMemo(() => {
+    const baseOpportunities =
       currentView === 'saved'
         ? opportunities.filter((opportunity) =>
             savedIds.includes(opportunity.id),
           )
-        : opportunities,
-    [opportunities, currentView, savedIds],
-  )
+        : opportunities
 
-  const categoryCounts = useMemo(
-    () => getCategoryCounts(baseOpportunities),
-    [baseOpportunities],
-  )
+    const filtered = filterOpportunities(
+      baseOpportunities,
+      debouncedSearch,
+      selectedCategory,
+    )
 
-  const visibleOpportunities = useMemo(
-    () =>
-      sortOpportunities(
-        filterOpportunities(baseOpportunities, debouncedSearch, selectedCategory),
-        sortBy,
-      ),
-    [baseOpportunities, debouncedSearch, selectedCategory, sortBy],
-  )
-
-  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All'
-  const isSavedEmpty = currentView === 'saved' && savedIds.length === 0
+    return sortOpportunities(filtered, sortBy)
+  }, [
+    opportunities,
+    currentView,
+    savedIds,
+    debouncedSearch,
+    selectedCategory,
+    sortBy,
+  ])
 
   function resetFilters() {
     setSearchQuery('')
@@ -84,155 +76,151 @@ export default function App() {
     setSortBy('deadline')
   }
 
-  function handleSubmissionSuccess(opportunity: Opportunity) {
-    setIsSubmitOpen(false)
+  function handleSubmissionSuccess() {
+    setShowSubmitForm(false)
     setCurrentView('all')
-    resetFilters()
-    setSubmissionNotice(`"${opportunity.title}" was submitted successfully.`)
+    setSearchQuery('')
+    setSelectedCategory('All')
+    setSortBy('deadline')
+    setSubmissionNotice('Opportunity submitted successfully.')
     void reload()
   }
 
   function handleViewChange(view: ViewMode) {
     setCurrentView(view)
     setSubmissionNotice('')
+    setShowSubmitForm(false)
   }
 
-  const resultCountLabel = isLoading
-    ? 'Loading listings...'
-    : `${visibleOpportunities.length} ${
-        visibleOpportunities.length === 1 ? 'opportunity' : 'opportunities'
-      }${hasActiveFilters ? ' match your filters' : ''}`
-
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <a
-        href="#results"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-card-hover"
-      >
-        Skip to opportunities
-      </a>
-
+    <div className="min-h-screen bg-[#0b0e14] text-[#edf1f8]">
       <Header
         savedCount={savedIds.length}
         currentView={currentView}
         onViewChange={handleViewChange}
         onSubmitClick={() => {
           setSubmissionNotice('')
-          setIsSubmitOpen(true)
+          setShowSubmitForm(true)
         }}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
 
-      {currentView === 'all' && (
-        <Hero opportunities={opportunities} isLoading={isLoading} />
-      )}
+      <Hero totalOpportunities={opportunities.length} />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3">
-          {submissionNotice && (
-            <div
-              role="status"
-              className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3 text-sm font-medium text-accent-soft-foreground"
-            >
-              <CheckCircleIcon className="h-5 w-5 shrink-0" />
-              <p className="flex-1">{submissionNotice}</p>
+      <main className="mx-auto max-w-7xl px-5 pb-16 pt-8 sm:px-8">
+        <SampleDataBanner />
+
+        {submissionNotice && (
+          <p
+            role="status"
+            className="mt-6 rounded-xl border border-[#a7f36b]/20 bg-[#a7f36b]/10 p-4 text-sm text-[#a7f36b]"
+          >
+            {submissionNotice}
+          </p>
+        )}
+
+        {showSubmitForm ? (
+          <SubmitOpportunityForm
+            onSuccess={handleSubmissionSuccess}
+            onCancel={() => setShowSubmitForm(false)}
+          />
+        ) : (
+          <>
+            <div className="mt-8 flex justify-end">
               <button
                 type="button"
-                onClick={() => setSubmissionNotice('')}
-                aria-label="Dismiss notification"
-                className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-accent/15"
+                onClick={() => {
+                  setSubmissionNotice('')
+                  setShowSubmitForm(true)
+                }}
+                className="rounded-xl bg-[#a7f36b] px-5 py-3 text-sm font-semibold text-[#10150d] transition hover:bg-[#b8ff80]"
               >
-                <XIcon className="h-4 w-4" />
+                + Submit opportunity
               </button>
             </div>
-          )}
-          <SampleDataBanner />
-        </div>
 
-        <section
-          aria-label="Search and filter opportunities"
-          className="sticky top-16 z-20 -mx-4 mt-6 border-b border-border bg-background/90 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-        >
-          <div className="flex flex-col gap-3 md:flex-row">
-            <div className="flex-1">
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            </div>
-            <div className="md:w-60">
-              <SortSelect value={sortBy} onChange={setSortBy} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              counts={categoryCounts}
-            />
-          </div>
-        </section>
+            <section className="mt-8" aria-label="Find opportunities">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
 
-        <section id="results" className="mt-6 scroll-mt-48" aria-labelledby="results-heading">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2
-                id="results-heading"
-                className="text-xl font-semibold tracking-tight text-foreground"
-              >
-                {currentView === 'saved' ? 'Saved opportunities' : 'All opportunities'}
-              </h2>
-              <p className="text-sm text-muted-foreground" aria-live="polite">
-                {resultCountLabel}
-              </p>
-            </div>
-            {hasActiveFilters && !isLoading && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-sm font-medium text-accent hover:underline"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
+              <div className="mt-5">
+                <CategoryFilter
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  counts={categoryCounts}
+                />
+              </div>
+            </section>
 
-          {isLoading ? (
-            <LoadingState />
-          ) : error ? (
-            <ErrorState message={error} onRetry={reload} />
-          ) : visibleOpportunities.length === 0 ? (
-            <EmptyState
-              title={isSavedEmpty ? 'No saved opportunities yet' : 'No opportunities found'}
-              message={
-                isSavedEmpty
-                  ? 'Use the bookmark button on any opportunity and it will show up here.'
-                  : 'Try a different keyword or choose another category.'
-              }
-              onReset={isSavedEmpty ? () => handleViewChange('all') : resetFilters}
-              resetLabel={isSavedEmpty ? 'Explore opportunities' : 'Clear filters'}
-            />
-          ) : (
-            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visibleOpportunities.map((opportunity) => (
-                <li key={opportunity.id}>
-                  <OpportunityCard
-                    opportunity={opportunity}
-                    isSaved={isSaved(opportunity.id)}
-                    onToggleSaved={toggleSaved}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            <section className="mt-10" aria-labelledby="results-heading">
+              <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-[#a7f36b]">
+                    {currentView === 'saved' ? 'YOUR COLLECTION' : 'EXPLORE'}
+                  </p>
+
+                  <h1
+                    id="results-heading"
+                    className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl"
+                  >
+                    {currentView === 'saved'
+                      ? 'Saved opportunities'
+                      : 'Opportunities for you'}
+                  </h1>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    {isLoading
+                      ? 'Loading listings...'
+                      : `${visibleOpportunities.length} ${
+                          visibleOpportunities.length === 1
+                            ? 'opportunity'
+                            : 'opportunities'
+                        } found`}
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-56">
+                  <SortSelect value={sortBy} onChange={setSortBy} />
+                </div>
+              </div>
+
+              {isLoading ? (
+                <LoadingState />
+              ) : error ? (
+                <ErrorState message={error} onRetry={reload} />
+              ) : visibleOpportunities.length === 0 ? (
+                <EmptyState
+                  title={
+                    currentView === 'saved' && savedIds.length === 0
+                      ? 'No saved opportunities yet'
+                      : 'No opportunities found'
+                  }
+                  message={
+                    currentView === 'saved' && savedIds.length === 0
+                      ? 'Save opportunities using the bookmark button and they will appear here.'
+                      : 'Try a different search keyword or category.'
+                  }
+                  onReset={resetFilters}
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleOpportunities.map((opportunity) => (
+                    <OpportunityCard
+                      key={opportunity.id}
+                      opportunity={opportunity}
+                      isSaved={isSaved(opportunity.id)}
+                      onToggleSaved={toggleSaved}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
 
       <Footer />
-
-      <SubmitOpportunityDialog
-        open={isSubmitOpen}
-        onClose={() => setIsSubmitOpen(false)}
-        onSuccess={handleSubmissionSuccess}
-      />
     </div>
   )
-}
+} 

@@ -1,58 +1,54 @@
 import type { OpportunityCategory } from '../types/opportunity'
 
-const categories: Array<{ value: OpportunityCategory | 'All'; label: string }> = [
-  { value: 'All', label: 'All' },
-  { value: 'Hackathon', label: 'Hackathons' },
-  { value: 'Internship', label: 'Internships' },
-  { value: 'Job', label: 'Jobs' },
-  { value: 'Event', label: 'Events' },
-  { value: 'Workshop', label: 'Workshops' },
+const categories: Array<OpportunityCategory | 'All'> = [
+  'All',
+  'Hackathon',
+  'Internship',
+  'Job',
+  'Event',
+  'Workshop',
 ]
 
 interface CategoryFilterProps {
   selectedCategory: OpportunityCategory | 'All'
   onCategoryChange: (category: OpportunityCategory | 'All') => void
   counts: Record<OpportunityCategory | 'All', number>
-  showCounts: boolean
 }
 
 export function CategoryFilter({
   selectedCategory,
   onCategoryChange,
   counts,
-  showCounts,
 }: CategoryFilterProps) {
   return (
     <div
-      className="scrollbar-none flex gap-1 overflow-x-auto"
+      className="flex flex-wrap gap-2"
       role="group"
       aria-label="Filter by opportunity category"
     >
-      {categories.map(({ value, label }) => {
-        const isSelected = selectedCategory === value
+      {categories.map((category) => {
+        const isSelected = selectedCategory === category
 
         return (
           <button
-            key={value}
+            key={category}
             type="button"
-            onClick={() => onCategoryChange(value)}
+            onClick={() => onCategoryChange(category)}
             aria-pressed={isSelected}
-            className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
               isSelected
-                ? 'bg-foreground text-background'
-                : 'text-muted-foreground hover:bg-surface-muted hover:text-foreground'
+                ? 'border-[#a7f36b] bg-[#a7f36b] text-[#10150d]'
+                : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/25 hover:bg-white/[0.07]'
             }`}
           >
-            {label}
-            {showCounts && (
-              <span
-                className={`font-mono text-[11px] tabular-nums ${
-                  isSelected ? 'text-background/70' : 'text-subtle-foreground'
-                }`}
-              >
-                {counts[value]}
-              </span>
-            )}
+            {category}
+            <span
+              className={`ml-2 text-xs ${
+                isSelected ? 'text-[#10150d]/70' : 'text-slate-500'
+              }`}
+            >
+              {counts[category]}
+            </span>
           </button>
         )
       })}

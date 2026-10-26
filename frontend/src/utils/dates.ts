@@ -21,30 +21,6 @@ export function formatDate(dateString: string | null): string {
   })
 }
 
-export function getDaysUntil(dateString: string | null): number | null {
-  if (!dateString) return null
-
-  const deadline = parseLocalDate(dateString)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  return Math.ceil(
-    (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-  )
-}
-
-export function formatRelativeDeadline(dateString: string | null): string {
-  const days = getDaysUntil(dateString)
-
-  if (days === null) return 'Rolling deadline'
-  if (days < 0) return 'Closed'
-  if (days === 0) return 'Closes today'
-  if (days === 1) return 'Closes tomorrow'
-  if (days <= 30) return `${days} days left`
-
-  return `Closes ${formatDate(dateString)}`
-}
-
 export function getDeadlineTone(
   dateString: string | null,
 ): 'urgent' | 'soon' | 'normal' | 'none' {

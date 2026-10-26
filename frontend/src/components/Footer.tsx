@@ -1,17 +1,18 @@
-import { Logo } from './Logo'
-
 export function Footer() {
   return (
-    <footer className="border-t border-border">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-[13px] text-subtle-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-center gap-3">
-          <Logo compact />
-          <p>
-            <span className="font-medium text-muted-foreground">TechPulse</span>
-            {' · Opportunities for student builders'}
-          </p>
-        </div>
-        <p>Always verify listings at the official source.</p>
+    <footer className="border-t border-white/10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-6 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <p className="font-semibold text-slate-300">
+          TechPulse<span className="text-[#a7f36b]">.</span>
+        </p>
+
+        <p className="text-slate-500">
+          Built for students, by builders.
+        </p>
+
+        <p className="text-xs text-slate-500">
+          Demo project · Sample listings are fictional
+        </p>
       </div>
     </footer>
   )
