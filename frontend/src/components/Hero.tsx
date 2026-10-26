@@ -1,58 +1,68 @@
+import type { Opportunity } from '../types/opportunity'
+import { getDaysUntil } from '../utils/dates'
+
 interface HeroProps {
-  totalOpportunities: number
+  opportunities: Opportunity[]
+  isLoading: boolean
 }
 
-export function Hero({ totalOpportunities }: HeroProps) {
+export function Hero({ opportunities, isLoading }: HeroProps) {
+  const closingThisWeek = opportunities.filter((opportunity) => {
+    const days = getDaysUntil(opportunity.deadline)
+    return days !== null && days >= 0 && days <= 7
+  }).length
+
+  const remoteFriendly = opportunities.filter(
+    (opportunity) => opportunity.mode !== 'Offline',
+  ).length
+
+  const organizations = new Set(
+    opportunities.map((opportunity) => opportunity.organization),
+  ).size
+
+  const stats = [
+    { label: 'Open opportunities', value: opportunities.length },
+    { label: 'Closing this week', value: closingThisWeek },
+    { label: 'Online or hybrid', value: remoteFriendly },
+    { label: 'Organizations', value: organizations },
+  ]
+
   return (
-    <section className="relative overflow-hidden py-14 sm:py-20">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-[#a7f36b]/10 blur-3xl"
-      />
-
-      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#a7f36b]/20 bg-[#a7f36b]/5 px-3 py-1.5 text-xs font-medium text-[#a7f36b]">
-          <span className="h-2 w-2 rounded-full bg-[#a7f36b]" />
-          Your next opportunity starts here
+    <section className="border-b border-border bg-surface">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-12">
+        <div className="max-w-2xl">
+          <p className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent-soft-foreground">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Curated for students and early-career builders
+          </p>
+          <h1 className="mt-4 text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Discover opportunities that move your career forward
+          </h1>
+          <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground">
+            Hackathons, internships, fresher jobs, workshops and tech events,
+            all in one place. Spend less time searching and more time building.
+          </p>
         </div>
 
-        <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
-          Find opportunities.
-          <span className="block text-[#a7f36b]">
-            Build your future.
-          </span>
-        </h1>
-
-        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-          Discover hackathons, internships, fresher jobs, workshops and
-          tech events in one place. Spend less time searching and more
-          time building.
-        </p>
-
-        <div className="mt-9 flex flex-wrap items-center gap-3">
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-white">
-              {totalOpportunities}
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Demo opportunities
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-white">5</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Categories
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-[#a7f36b]">Free</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Student access
-            </p>
-          </div>
-        </div>
+        <dl className="grid w-full shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4 lg:w-auto lg:min-w-[32rem]">
+          {stats.map((stat) => (
+            <div key={stat.label} className="bg-surface px-4 py-4">
+              <dt className="text-xs font-medium text-muted-foreground">
+                {stat.label}
+              </dt>
+              <dd className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-foreground">
+                {isLoading ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-7 w-10 animate-pulse rounded bg-surface-muted align-middle"
+                  />
+                ) : (
+                  stat.value
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   )

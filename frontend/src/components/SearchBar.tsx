@@ -1,3 +1,5 @@
+import { SearchIcon, XIcon } from './Icons'
+
 interface SearchBarProps {
   value: string
   onChange: (value: string) => void
@@ -10,27 +12,28 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         Search opportunities
       </label>
 
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-      >
-        <circle cx="11" cy="11" r="7" />
-        <path d="m16 16 4 4" />
-      </svg>
+      <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-subtle-foreground" />
 
       <input
         id="opportunity-search"
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search internships, hackathons, skills..."
+        placeholder="Search by role, company, skill or location"
         autoComplete="off"
-        className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-4 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 transition focus:border-[#a7f36b]/50 focus:outline-none focus:ring-2 focus:ring-[#a7f36b]/10"
+        className="h-11 w-full rounded-lg border border-border bg-surface pl-10 pr-10 text-sm text-foreground outline-none transition placeholder:text-subtle-foreground focus:border-accent focus:ring-3 focus:ring-ring [&::-webkit-search-cancel-button]:hidden"
       />
+
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label="Clear search"
+          className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-subtle-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
+        >
+          <XIcon className="h-4 w-4" />
+        </button>
+      )}
     </div>
   )
 }

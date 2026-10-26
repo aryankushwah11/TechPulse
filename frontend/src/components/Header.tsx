@@ -1,8 +1,15 @@
+import type { Theme } from '../hooks/useTheme'
+import type { ViewMode } from '../types/opportunity'
+import { BookmarkIcon, MoonIcon, PlusIcon, SearchIcon, SunIcon } from './Icons'
+import { buttonStyles } from './ui'
+
 interface HeaderProps {
   savedCount: number
-  currentView: 'all' | 'saved'
-  onViewChange: (view: 'all' | 'saved') => void
+  currentView: ViewMode
+  onViewChange: (view: ViewMode) => void
   onSubmitClick: () => void
+  theme: Theme
+  onToggleTheme: () => void
 }
 
 export function Header({
@@ -10,70 +17,96 @@ export function Header({
   currentView,
   onViewChange,
   onSubmitClick,
+  theme,
+  onToggleTheme,
 }: HeaderProps) {
+  const navItemClass = (isActive: boolean) =>
+    `relative inline-flex h-16 items-center gap-2 px-2 text-sm font-medium transition-colors sm:px-3 ${
+      isActive
+        ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent'
+        : 'text-muted-foreground hover:text-foreground'
+    }`
+
   return (
-    <header className="border-b border-white/10 bg-[#0b0e14]/90">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+    <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur supports-[backdrop-filter]:bg-surface/75">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => onViewChange('all')}
-          className="flex items-center gap-3 text-left"
+          className="flex items-center gap-2.5 rounded-lg text-left"
           aria-label="TechPulse home"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a7f36b] text-lg font-black text-[#10150d]">
-            T
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path
+                d="M3 12h4l2.5-6 5 12 2.5-6h4"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </span>
-          <span>
-            <span className="block text-lg font-bold tracking-tight text-white">
-              TechPulse
-            </span>
-            <span className="block text-xs text-slate-400">
-              Opportunities for students
-            </span>
+          <span className="text-base font-bold tracking-tight text-foreground">
+            TechPulse
           </span>
         </button>
 
-        <nav
-          aria-label="Main navigation"
-          className="flex items-center gap-1"
-        >
-          <button
-            type="button"
-            onClick={() => onViewChange('all')}
-            aria-current={currentView === 'all' ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-              currentView === 'all'
-                ? 'bg-white/10 text-white'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Explore
-          </button>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <nav aria-label="Main navigation" className="flex items-center">
+            <button
+              type="button"
+              onClick={() => onViewChange('all')}
+              aria-current={currentView === 'all' ? 'page' : undefined}
+              className={navItemClass(currentView === 'all')}
+            >
+              <SearchIcon className="hidden h-4 w-4 sm:block" />
+              Explore
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onViewChange('saved')}
+              aria-current={currentView === 'saved' ? 'page' : undefined}
+              className={navItemClass(currentView === 'saved')}
+            >
+              <BookmarkIcon className="hidden h-4 w-4 sm:block" />
+              Saved
+              <span
+                className="min-w-5 rounded-full bg-surface-muted px-1.5 py-0.5 text-center text-xs font-semibold tabular-nums text-muted-foreground"
+                aria-label={`${savedCount} saved`}
+              >
+                {savedCount}
+              </span>
+            </button>
+          </nav>
+
+          <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
           <button
             type="button"
-            onClick={() => onViewChange('saved')}
-            aria-current={currentView === 'saved' ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-              currentView === 'saved'
-                ? 'bg-white/10 text-white'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={onToggleTheme}
+            className={buttonStyles.icon}
+            aria-label={
+              theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+            }
+            title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
           >
-            Saved
-            <span className="ml-2 rounded-full bg-[#a7f36b]/15 px-2 py-0.5 text-xs text-[#a7f36b]">
-              {savedCount}
-            </span>
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
 
           <button
             type="button"
             onClick={onSubmitClick}
-            className="ml-1 rounded-lg bg-[#a7f36b] px-3 py-2 text-sm font-semibold text-[#10150d] transition hover:bg-[#b8ff80]"
+            className={`${buttonStyles.primary} px-2.5 sm:px-4`}
           >
-            + Submit
+            <PlusIcon />
+            <span className="sr-only sm:not-sr-only">Submit Opportunity</span>
           </button>
-        </nav>
+        </div>
       </div>
     </header>
   )

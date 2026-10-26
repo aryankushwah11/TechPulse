@@ -1,18 +1,18 @@
+import { InfoIcon } from './Icons'
+
 export function SampleDataBanner() {
   return (
     <div
-      role="status"
-      className="flex items-start gap-3 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+      role="note"
+      className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-foreground"
     >
-      <span aria-hidden="true" className="text-lg">
-        ⚠️
-      </span>
-
-      <p className="leading-6">
+      <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+      <p className="leading-relaxed">
         <strong className="font-semibold">Demo data:</strong>{' '}
-        These opportunities are fictional examples for preview purposes.
-        They are not verified, live openings. Always check official sources
-        before applying.
+        <span className="text-muted-foreground">
+          Listings marked as sample are fictional examples, not verified live
+          openings. Always check official sources before applying.
+        </span>
       </p>
     </div>
   )

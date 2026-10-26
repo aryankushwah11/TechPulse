@@ -1,5 +1,17 @@
-import type { Opportunity } from '../types/opportunity'
-import { formatDate, getDeadlineTone } from '../utils/dates'
+import type { Opportunity, OpportunityCategory } from '../types/opportunity'
+import {
+  formatDate,
+  formatRelativeDeadline,
+  getDeadlineTone,
+} from '../utils/dates'
+import {
+  ArrowUpRightIcon,
+  BookmarkIcon,
+  CalendarIcon,
+  GlobeIcon,
+  LinkIcon,
+  MapPinIcon,
+} from './Icons'
 
 interface OpportunityCardProps {
   opportunity: Opportunity
@@ -7,19 +19,38 @@ interface OpportunityCardProps {
   onToggleSaved: (id: string) => void
 }
 
-const categoryStyles: Record<string, string> = {
-  Hackathon: 'bg-violet-400/10 text-violet-300 border-violet-400/20',
-  Internship: 'bg-sky-400/10 text-sky-300 border-sky-400/20',
-  Job: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
-  Event: 'bg-orange-400/10 text-orange-300 border-orange-400/20',
-  Workshop: 'bg-pink-400/10 text-pink-300 border-pink-400/20',
+const categoryDot: Record<OpportunityCategory, string> = {
+  Hackathon: 'bg-violet-500',
+  Internship: 'bg-sky-500',
+  Job: 'bg-accent',
+  Event: 'bg-amber-500',
+  Workshop: 'bg-rose-500',
 }
 
 const deadlineStyles = {
-  urgent: 'text-rose-300',
-  soon: 'text-amber-300',
-  normal: 'text-slate-300',
-  none: 'text-slate-500',
+  urgent: 'bg-danger-soft text-danger',
+  soon: 'bg-warning-soft text-warning',
+  normal: 'bg-surface-muted text-muted-foreground',
+  none: 'bg-surface-muted text-muted-foreground',
+}
+
+const MAX_VISIBLE_TAGS = 4
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join('')
+}
+
+function getHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
 }
 
 export function OpportunityCard({
@@ -28,18 +59,37 @@ export function OpportunityCard({
   onToggleSaved,
 }: OpportunityCardProps) {
   const deadlineTone = getDeadlineTone(opportunity.deadline)
+  const visibleTags = opportunity.tags.slice(0, MAX_VISIBLE_TAGS)
+  const hiddenTagCount = opportunity.tags.length - visibleTags.length
+  const sourceHost = opportunity.sourceUrl
+    ? getHostname(opportunity.sourceUrl)
+    : null
+  const titleId = `opportunity-${opportunity.id}-title`
 
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.05]">
-      <div className="flex items-start justify-between gap-3">
+    <article
+      aria-labelledby={titleId}
+      className="group flex h-full flex-col rounded-xl border border-border bg-surface p-5 shadow-card transition hover:border-border-strong hover:shadow-card-hover"
+    >
+      <div className="flex items-start gap-3">
         <span
-          className={`rounded-full border px-3 py-1 text-xs font-medium ${
-            categoryStyles[opportunity.category] ??
-            'border-white/10 text-slate-300'
-          }`}
+          aria-hidden="true"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-muted text-sm font-bold text-foreground"
         >
-          {opportunity.category}
+          {getInitials(opportunity.organization)}
         </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-muted-foreground">
+            {opportunity.organization}
+          </p>
+          <h2
+            id={titleId}
+            className="mt-0.5 line-clamp-2 text-base font-semibold leading-snug text-foreground"
+          >
+            {opportunity.title}
+          </h2>
+        </div>
 
         <button
           type="button"
@@ -50,83 +100,112 @@ export function OpportunityCard({
               ? `Remove ${opportunity.title} from saved opportunities`
               : `Save ${opportunity.title}`
           }
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition ${
+          className={`-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
             isSaved
-              ? 'border-[#a7f36b]/30 bg-[#a7f36b]/10 text-[#a7f36b]'
-              : 'border-white/10 text-slate-400 hover:text-white'
+              ? 'text-accent hover:bg-accent-soft'
+              : 'text-subtle-foreground hover:bg-surface-muted hover:text-foreground'
           }`}
         >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill={isSaved ? 'currentColor' : 'none'}
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className="h-5 w-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 4.75A1.75 1.75 0 0 1 7.75 3h8.5A1.75 1.75 0 0 1 18 4.75V21l-6-3.75L6 21V4.75Z"
-            />
-          </svg>
+          <BookmarkIcon filled={isSaved} className="h-5 w-5" />
         </button>
       </div>
 
-      <h2 className="mt-5 text-lg font-semibold leading-7 text-white">
-        {opportunity.title}
-      </h2>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-xs font-medium text-foreground">
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 rounded-full ${categoryDot[opportunity.category] ?? 'bg-subtle-foreground'}`}
+          />
+          {opportunity.category}
+        </span>
+        <span
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${deadlineStyles[deadlineTone]}`}
+        >
+          <CalendarIcon className="h-3.5 w-3.5" />
+          {formatRelativeDeadline(opportunity.deadline)}
+        </span>
+        {opportunity.isSample && (
+          <span className="rounded-md bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+            Sample
+          </span>
+        )}
+      </div>
 
-      <p className="mt-1 text-sm text-slate-400">
-        {opportunity.organization}
-      </p>
-
-      <p className="mt-4 flex-1 text-sm leading-6 text-slate-400">
+      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
         {opportunity.description}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {opportunity.tags.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-md bg-white/[0.05] px-2 py-1 text-xs text-slate-300"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-5 space-y-3 border-t border-white/10 pt-4">
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-slate-500">Location</span>
-          <span className="text-right text-slate-300">
-            {opportunity.mode} · {opportunity.location}
-          </span>
+      <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+        <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+          <dt>
+            <GlobeIcon className="h-4 w-4 shrink-0 text-subtle-foreground" />
+            <span className="sr-only">Mode</span>
+          </dt>
+          <dd className="truncate text-foreground">{opportunity.mode}</dd>
         </div>
-
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-slate-500">Deadline</span>
-          <span className={`text-right font-medium ${deadlineStyles[deadlineTone]}`}>
+        <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+          <dt>
+            <MapPinIcon className="h-4 w-4 shrink-0 text-subtle-foreground" />
+            <span className="sr-only">Location</span>
+          </dt>
+          <dd className="truncate text-foreground">{opportunity.location}</dd>
+        </div>
+        <div className="flex min-w-0 items-center gap-2 text-muted-foreground sm:col-span-2">
+          <dt>
+            <CalendarIcon className="h-4 w-4 shrink-0 text-subtle-foreground" />
+            <span className="sr-only">Deadline</span>
+          </dt>
+          <dd className="truncate text-foreground">
             {formatDate(opportunity.deadline)}
-          </span>
+          </dd>
         </div>
-      </div>
+      </dl>
 
-      {opportunity.sourceUrl ? (
-        <a
-          href={opportunity.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#a7f36b] px-4 py-3 text-sm font-semibold text-[#10150d] transition hover:bg-[#b8ff82] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a7f36b]"
-        >
-          View opportunity
-          <span aria-hidden="true">↗</span>
-        </a>
-      ) : (
-        <p className="mt-5 rounded-xl border border-white/10 px-4 py-3 text-center text-xs text-slate-500">
-          Demo listing · No application link
-        </p>
+      {visibleTags.length > 0 && (
+        <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">
+          {visibleTags.map((tag) => (
+            <li
+              key={tag}
+              className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+            >
+              {tag}
+            </li>
+          ))}
+          {hiddenTagCount > 0 && (
+            <li className="rounded-full px-1.5 py-1 text-xs font-medium text-subtle-foreground">
+              +{hiddenTagCount} more
+            </li>
+          )}
+        </ul>
       )}
+
+      <div aria-hidden="true" className="flex-1" />
+
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <p className="flex min-w-0 items-center gap-1.5 text-xs text-subtle-foreground">
+          <LinkIcon className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">
+            {sourceHost ?? 'No source link'}
+          </span>
+        </p>
+
+        {opportunity.sourceUrl ? (
+          <a
+            href={opportunity.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft"
+          >
+            View details
+            <ArrowUpRightIcon className="h-4 w-4" />
+            <span className="sr-only"> for {opportunity.title} (opens in a new tab)</span>
+          </a>
+        ) : (
+          <span className="shrink-0 text-xs text-subtle-foreground">
+            Verified {formatDate(opportunity.lastVerified.slice(0, 10))}
+          </span>
+        )}
+      </div>
     </article>
   )
 }
