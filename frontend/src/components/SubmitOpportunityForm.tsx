@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import {
   createOpportunity,
   type CreateOpportunityPayload,
@@ -8,6 +8,8 @@ import type {
   OpportunityCategory,
   OpportunityMode,
 } from '../types/opportunity'
+import { AlertIcon } from './Icons'
+import { buttonStyles, fieldStyles } from './ui'
 
 interface SubmitOpportunityFormProps {
   onSuccess: (opportunity: Opportunity) => void
@@ -36,46 +38,135 @@ const initialForm = {
   tags: '',
 }
 
-const fieldClass =
-  'mt-2 w-full rounded-xl border border-white/10 bg-[#111722] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#a7f36b]'
+type FormState = typeof initialForm
+type FieldName = keyof FormState
+type FieldErrors = Partial<Record<FieldName, string>>
 
-const labelClass = 'block text-sm font-medium text-slate-200'
+const DESCRIPTION_MAX = 2000
+
+function parseTags(value: string): string[] {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
+function validate(form: FormState): FieldErrors {
+  const errors: FieldErrors = {}
+  const title = form.title.trim()
+  const organization = form.organization.trim()
+  const location = form.location.trim()
+  const description = form.description.trim()
+  const tags = parseTags(form.tags)
+
+  if (title.length < 3) errors.title = 'Enter a title of at least 3 characters.'
+  if (organization.length < 2)
+    errors.organization = 'Enter the organization name.'
+  if (location.length < 2)
+    errors.location = 'Enter a location, or "Remote".'
+  if (description.length < 10)
+    errors.description = 'Write a description of at least 10 characters.'
+
+  if (form.deadline) {
+    const today = new Date().toLocaleDateString('en-CA')
+    if (form.deadline < today) errors.deadline = 'Deadline cannot be in the past.'
+  }
+
+  if (form.sourceUrl.trim()) {
+    try {
+      const url = new URL(form.sourceUrl.trim())
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        errors.sourceUrl = 'Use a link starting with http:// or https://.'
+      }
+    } catch {
+      errors.sourceUrl = 'Enter a valid URL, e.g. https://example.com.'
+    }
+  }
+
+  if (tags.length === 0) errors.tags = 'Add at least one tag.'
+  else if (tags.length > 15) errors.tags = 'Use no more than 15 tags.'
+
+  return errors
+}
+
+interface FieldProps {
+  id: string
+  label: string
+  required?: boolean
+  hint?: ReactNode
+  error?: string
+  className?: string
+  children: (describedBy: string | undefined) => ReactNode
+}
+
+function Field({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  className = '',
+  children,
+}: FieldProps) {
+  const hintId = hint ? `${id}-hint` : undefined
+  const errorId = error ? `${id}-error` : undefined
+  const describedBy = [errorId, hintId].filter(Boolean).join(' ') || undefined
+
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
+        {label}
+        {required ? (
+          <span className="text-danger" aria-hidden="true">
+            {' *'}
+          </span>
+        ) : (
+          <span className="font-normal text-subtle-foreground"> (optional)</span>
+        )}
+      </label>
+      {children(describedBy)}
+      {error ? (
+        <p id={errorId} className="flex items-center gap-1.5 text-xs font-medium text-danger">
+          <AlertIcon className="h-3.5 w-3.5 shrink-0" />
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={hintId} className="text-xs text-subtle-foreground">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  )
+}
 
 export function SubmitOpportunityForm({
   onSuccess,
   onCancel,
 }: SubmitOpportunityFormProps) {
   const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [submitError, setSubmitError] = useState('')
 
-  function updateField(
-    field: keyof typeof initialForm,
-    value: string,
-  ) {
-    setForm((previous) => ({ ...previous, [field]: value }))
-    setError('')
-    setSuccess('')
+  function updateField(field: FieldName, value: string) {
+    const nextForm = { ...form, [field]: value }
+    setForm(nextForm)
+    setSubmitError('')
+    if (hasAttemptedSubmit) setErrors(validate(nextForm))
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError('')
-    setSuccess('')
+    setHasAttemptedSubmit(true)
+    setSubmitError('')
 
-    const tags = form.tags
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
+    const nextErrors = validate(form)
+    setErrors(nextErrors)
 
-    if (tags.length === 0) {
-      setError('Please add at least one tag, separated by commas.')
-      return
-    }
-
-    if (tags.length > 15) {
-      setError('Please enter no more than 15 tags.')
+    const firstInvalid = Object.keys(nextErrors)[0]
+    if (firstInvalid) {
+      document.getElementById(`field-${firstInvalid}`)?.focus()
       return
     }
 
@@ -88,18 +179,17 @@ export function SubmitOpportunityForm({
       location: form.location.trim(),
       deadline: form.deadline || null,
       sourceUrl: form.sourceUrl.trim() || null,
-      tags,
+      tags: parseTags(form.tags),
     }
 
     setIsSubmitting(true)
 
     try {
       const opportunity = await createOpportunity(payload)
-      setSuccess('Opportunity submitted successfully!')
       setForm(initialForm)
       onSuccess(opportunity)
     } catch (submissionError) {
-      setError(
+      setSubmitError(
         submissionError instanceof Error
           ? submissionError.message
           : 'Something went wrong. Please try again.',
@@ -109,213 +199,199 @@ export function SubmitOpportunityForm({
     }
   }
 
+  const tagPreview = parseTags(form.tags)
+  const fieldProps = (field: FieldName, describedBy: string | undefined) => ({
+    id: `field-${field}`,
+    name: field,
+    value: form[field],
+    'aria-invalid': errors[field] ? true : undefined,
+    'aria-describedby': describedBy,
+    className: fieldStyles,
+  })
+
   return (
-    <section
-      className="mt-8 rounded-2xl border border-white/10 bg-[#10151f] p-5 sm:p-8"
-      aria-labelledby="submit-opportunity-heading"
-    >
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-[#a7f36b]">
-            CONTRIBUTE TO TECHPULSE
-          </p>
-          <h2
-            id="submit-opportunity-heading"
-            className="mt-2 text-2xl font-semibold text-white"
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field id="field-title" label="Opportunity title" required error={errors.title} className="sm:col-span-2">
+            {(describedBy) => (
+              <input
+                {...fieldProps('title', describedBy)}
+                onChange={(event) => updateField('title', event.target.value)}
+                maxLength={150}
+                placeholder="e.g. Summer Software Engineering Internship"
+                aria-required="true"
+              />
+            )}
+          </Field>
+
+          <Field id="field-organization" label="Organization" required error={errors.organization}>
+            {(describedBy) => (
+              <input
+                {...fieldProps('organization', describedBy)}
+                onChange={(event) => updateField('organization', event.target.value)}
+                maxLength={100}
+                placeholder="e.g. Example Technologies"
+                autoComplete="organization"
+                aria-required="true"
+              />
+            )}
+          </Field>
+
+          <Field id="field-category" label="Category" required>
+            {(describedBy) => (
+              <select
+                {...fieldProps('category', describedBy)}
+                onChange={(event) => updateField('category', event.target.value)}
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+
+          <Field id="field-mode" label="Mode" required>
+            {(describedBy) => (
+              <select
+                {...fieldProps('mode', describedBy)}
+                onChange={(event) => updateField('mode', event.target.value)}
+              >
+                {modes.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+
+          <Field id="field-location" label="Location" required error={errors.location}>
+            {(describedBy) => (
+              <input
+                {...fieldProps('location', describedBy)}
+                onChange={(event) => updateField('location', event.target.value)}
+                maxLength={150}
+                placeholder="e.g. Remote or New Delhi"
+                aria-required="true"
+              />
+            )}
+          </Field>
+
+          <Field id="field-deadline" label="Application deadline" error={errors.deadline}>
+            {(describedBy) => (
+              <input
+                {...fieldProps('deadline', describedBy)}
+                type="date"
+                onChange={(event) => updateField('deadline', event.target.value)}
+                min={new Date().toLocaleDateString('en-CA')}
+              />
+            )}
+          </Field>
+
+          <Field
+            id="field-sourceUrl"
+            label="Official source URL"
+            error={errors.sourceUrl}
+            hint="Prefer the official application page or organizer website."
           >
-            Submit an opportunity
-          </h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Share a useful opportunity with fellow students. Submit only
-            information you can verify from a reliable source.
-          </p>
+            {(describedBy) => (
+              <input
+                {...fieldProps('sourceUrl', describedBy)}
+                type="url"
+                inputMode="url"
+                onChange={(event) => updateField('sourceUrl', event.target.value)}
+                placeholder="https://example.com/careers"
+              />
+            )}
+          </Field>
+
+          <Field
+            id="field-description"
+            label="Description"
+            required
+            error={errors.description}
+            className="sm:col-span-2"
+            hint={`${form.description.length}/${DESCRIPTION_MAX} characters. Include eligibility, benefits and how to apply.`}
+          >
+            {(describedBy) => (
+              <textarea
+                {...fieldProps('description', describedBy)}
+                onChange={(event) => updateField('description', event.target.value)}
+                maxLength={DESCRIPTION_MAX}
+                rows={4}
+                placeholder="What is it, who can apply, and what do participants get?"
+                aria-required="true"
+                className={`${fieldStyles} resize-y`}
+              />
+            )}
+          </Field>
+
+          <Field
+            id="field-tags"
+            label="Tags"
+            required
+            error={errors.tags}
+            className="sm:col-span-2"
+            hint="Separate tags with commas. Between 1 and 15 tags."
+          >
+            {(describedBy) => (
+              <>
+                <input
+                  {...fieldProps('tags', describedBy)}
+                  onChange={(event) => updateField('tags', event.target.value)}
+                  placeholder="Python, AI/ML, Web Development"
+                  aria-required="true"
+                />
+                {tagPreview.length > 0 && (
+                  <ul className="flex flex-wrap gap-1.5" aria-label="Tag preview">
+                    {tagPreview.slice(0, 15).map((tag, index) => (
+                      <li
+                        key={`${tag}-${index}`}
+                        className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-soft-foreground"
+                      >
+                        {tag}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </Field>
         </div>
 
+        {submitError && (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2.5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
+            <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{submitError}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col-reverse gap-2 border-t border-border bg-surface-muted/60 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
+          disabled={isSubmitting}
+          className={buttonStyles.secondary}
         >
           Cancel
         </button>
+        <button type="submit" disabled={isSubmitting} className={buttonStyles.primary}>
+          {isSubmitting && (
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+            />
+          )}
+          {isSubmitting ? 'Submitting...' : 'Submit opportunity'}
+        </button>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <label className={labelClass}>
-            Opportunity title *
-            <input
-              className={fieldClass}
-              value={form.title}
-              onChange={(event) => updateField('title', event.target.value)}
-              minLength={3}
-              maxLength={150}
-              placeholder="e.g. Summer Software Engineering Internship"
-              required
-            />
-          </label>
-
-          <label className={labelClass}>
-            Organization *
-            <input
-              className={fieldClass}
-              value={form.organization}
-              onChange={(event) =>
-                updateField('organization', event.target.value)
-              }
-              minLength={2}
-              maxLength={100}
-              placeholder="e.g. Example Technologies"
-              required
-            />
-          </label>
-
-          <label className={labelClass}>
-            Category *
-            <select
-              className={fieldClass}
-              value={form.category}
-              onChange={(event) =>
-                updateField('category', event.target.value)
-              }
-              required
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={labelClass}>
-            Mode *
-            <select
-              className={fieldClass}
-              value={form.mode}
-              onChange={(event) => updateField('mode', event.target.value)}
-              required
-            >
-              {modes.map((mode) => (
-                <option key={mode} value={mode}>
-                  {mode}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={labelClass}>
-            Location *
-            <input
-              className={fieldClass}
-              value={form.location}
-              onChange={(event) =>
-                updateField('location', event.target.value)
-              }
-              minLength={2}
-              maxLength={150}
-              placeholder="e.g. Remote or New Delhi"
-              required
-            />
-          </label>
-
-          <label className={labelClass}>
-            Application deadline
-            <input
-              type="date"
-              className={fieldClass}
-              value={form.deadline}
-              onChange={(event) =>
-                updateField('deadline', event.target.value)
-              }
-              min={new Date().toLocaleDateString('en-CA')}
-            />
-          </label>
-        </div>
-
-        <label className={labelClass}>
-          Description *
-          <textarea
-            className={fieldClass}
-            value={form.description}
-            onChange={(event) =>
-              updateField('description', event.target.value)
-            }
-            minLength={10}
-            maxLength={2000}
-            rows={4}
-            placeholder="Explain the opportunity, eligibility, benefits and how students can apply."
-            required
-          />
-        </label>
-
-        <label className={labelClass}>
-          Official source URL
-          <input
-            type="url"
-            className={fieldClass}
-            value={form.sourceUrl}
-            onChange={(event) =>
-              updateField('sourceUrl', event.target.value)
-            }
-            placeholder="https://example.com/careers"
-          />
-          <span className="mt-2 block text-xs font-normal text-slate-500">
-            Prefer an official application page or organizer website.
-          </span>
-        </label>
-
-        <label className={labelClass}>
-          Tags *
-          <input
-            className={fieldClass}
-            value={form.tags}
-            onChange={(event) => updateField('tags', event.target.value)}
-            placeholder="Python, AI/ML, Web Development"
-            required
-          />
-          <span className="mt-2 block text-xs font-normal text-slate-500">
-            Separate tags with commas. Add between 1 and 15 tags.
-          </span>
-        </label>
-
-        {error && (
-          <p
-            role="alert"
-            className="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-300"
-          >
-            {error}
-          </p>
-        )}
-
-        {success && (
-          <p
-            role="status"
-            className="rounded-xl border border-[#a7f36b]/20 bg-[#a7f36b]/10 p-4 text-sm text-[#a7f36b]"
-          >
-            {success}
-          </p>
-        )}
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-[#a7f36b] px-5 py-3 text-sm font-semibold text-[#10150d] transition hover:bg-[#b8ff80] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit opportunity'}
-          </button>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-60"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </section>
+    </form>
   )
 }
