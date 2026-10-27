@@ -48,18 +48,20 @@ export default function App() {
 
   useEffect(() => {
     if (!submissionNotice) return
+
     const timeout = window.setTimeout(() => setSubmissionNotice(''), 6000)
     return () => window.clearTimeout(timeout)
   }, [submissionNotice])
 
+  const savedOpportunities = useMemo(
+    () => opportunities.filter((opportunity) => savedIds.includes(opportunity.id)),
+    [opportunities, savedIds],
+  )
+
   const baseOpportunities = useMemo(
     () =>
-      currentView === 'saved'
-        ? opportunities.filter((opportunity) =>
-            savedIds.includes(opportunity.id),
-          )
-        : opportunities,
-    [opportunities, currentView, savedIds],
+      currentView === 'saved' ? savedOpportunities : opportunities,
+    [currentView, savedOpportunities, opportunities],
   )
 
   const categoryCounts = useMemo(
@@ -81,7 +83,7 @@ export default function App() {
   )
 
   const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All'
-  const isSavedEmpty = currentView === 'saved' && savedIds.length === 0
+  const isSavedEmpty = currentView === 'saved' && savedOpportunities.length === 0
 
   function resetFilters() {
     setSearchQuery('')
@@ -100,6 +102,7 @@ export default function App() {
   function handleViewChange(view: ViewMode) {
     setCurrentView(view)
     setSubmissionNotice('')
+    resetFilters()
   }
 
   const resultCountLabel = isLoading
@@ -118,7 +121,7 @@ export default function App() {
       </a>
 
       <Header
-        savedCount={savedIds.length}
+        savedCount={savedOpportunities.length}
         currentView={currentView}
         onViewChange={handleViewChange}
         onSubmitClick={() => {
@@ -150,6 +153,7 @@ export default function App() {
               </button>
             </div>
           )}
+
           <SampleDataBanner />
         </div>
 
@@ -161,10 +165,12 @@ export default function App() {
             <div className="flex-1">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
             </div>
+
             <div className="md:w-60">
               <SortSelect value={sortBy} onChange={setSortBy} />
             </div>
           </div>
+
           <div className="mt-3">
             <CategoryFilter
               selectedCategory={selectedCategory}
@@ -190,10 +196,12 @@ export default function App() {
                   ? 'Saved opportunities'
                   : 'All opportunities'}
               </h2>
+
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 {resultCountLabel}
               </p>
             </div>
+
             {hasActiveFilters && !isLoading && (
               <button
                 type="button"
