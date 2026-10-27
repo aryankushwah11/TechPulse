@@ -1,58 +1,44 @@
-interface HeroProps {
-  totalOpportunities: number
-}
+const highlights = ['Hackathons', 'Internships', 'Fresher jobs', 'Workshops', 'Events']
 
-export function Hero({ totalOpportunities }: HeroProps) {
+export function Hero() {
   return (
-    <section className="relative overflow-hidden py-14 sm:py-20">
-      <div
+    <section className="relative overflow-hidden border-b border-border">
+      <svg
         aria-hidden="true"
-        className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-[#a7f36b]/10 blur-3xl"
-      />
+        viewBox="0 0 600 120"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-1/2 text-border-strong md:block"
+      >
+        <path
+          d="M0 70 H220 L240 70 L256 40 L276 100 L296 20 L314 80 L326 70 H600"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          vectorEffect="non-scaling-stroke"
+          strokeLinejoin="round"
+        />
+        <circle cx="296" cy="20" r="3" className="fill-accent" />
+      </svg>
 
-      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#a7f36b]/20 bg-[#a7f36b]/5 px-3 py-1.5 text-xs font-medium text-[#a7f36b]">
-          <span className="h-2 w-2 rounded-full bg-[#a7f36b]" />
-          Your next opportunity starts here
-        </div>
-
-        <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
-          Find opportunities.
-          <span className="block text-[#a7f36b]">
-            Build your future.
-          </span>
-        </h1>
-
-        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-          Discover hackathons, internships, fresher jobs, workshops and
-          tech events in one place. Spend less time searching and more
-          time building.
+      <div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-subtle-foreground">
+          For students and early-career builders
         </p>
-
-        <div className="mt-9 flex flex-wrap items-center gap-3">
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-white">
-              {totalOpportunities}
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Demo opportunities
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-white">5</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Categories
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-2xl font-bold text-[#a7f36b]">Free</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Student access
-            </p>
-          </div>
-        </div>
+        <h1 className="mt-3 max-w-xl text-pretty text-2xl font-semibold tracking-tight text-foreground sm:text-[28px] sm:leading-tight">
+          Find your next hackathon, internship or first role.
+        </h1>
+        <p className="mt-2 max-w-lg text-pretty text-[15px] leading-relaxed text-muted-foreground">
+          One place to track opportunities in tech. Save what matters, and
+          always apply through the official source.
+        </p>
+        <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+          {highlights.map((item) => (
+            <li key={item} className="flex items-center gap-2">
+              <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent" />
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )
